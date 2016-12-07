@@ -18,6 +18,8 @@ For the former part, we work with a dataset about placement records of various c
 * Class 10 Records
 * Class 12 Records
 
+Another attribute would be the applied loan amount, which would later be compared with the predicted package and then decision announced.
+
 For the monitoring system, we have the same, along with two additional features, updated on a monthly basis (say):
 * Current Performance
 * Attendance Records
