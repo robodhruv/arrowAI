@@ -48,8 +48,10 @@ Logs are queried using the `autorep` command, and common usage is given [here](h
 * Pri/Xit
 
 Output of the above command looks like:  
+
+
 Job Name | Last Start | Last End | Status | Run/Ntry | Pri/Xit  
---- | --- | --- | --- | --- | ---
+----|-----|---|---|---|---
 Nightly_Download | 05/10/2007 06:01:03 | 05/10/2007 06:03:20 | SU | 1261419/1 | 0  
 Watch_4_file | 05/10/2007 06:01:13 | 05/10/2007 06:01:16 | SU | 1261419/1 | 0  
 filter_data | 05/10/2007 06:01:26 | 05/10/2007 06:01:48 | SU | 1261419/1 | 0  
