@@ -1,4 +1,4 @@
-from numpy import exp, array, random, dot, sum, size, absolute
+from numpy import exp, array, random, dot, sum, size, absolute, asfarray
 import numpy as np
 from csv import reader
 import pickle, joblib
@@ -20,244 +20,264 @@ def load_csv(filename):
 
 
 def normalise(data):
-    data = array(data)
-    data -= np.mean(data, axis=0)
-    data /= np.std (data, axis = 0)
-    return data
+	data = array(data)
+	mean = np.mean(data, axis=0)
+	data -= mean
+	std = np.std (data, axis = 0)
+	data /= std
+	return data, mean, std
 
 # calculate a random number where:  a <= rand < b
 def rand(a, b):
-    return (b-a)*random.random() + a
-
-# Make a matrix (we could use NumPy to speed this up)
-def makeMatrix(I, J, fill=0.0):
-    m = []
-    for i in range(I):
-        m.append([fill]*J)
-    return m
+	return (b-a)*random.random() + a
 
 # our sigmoid function, tanh is a little nicer than the standard 1/(1+e^-x)
 def sigmoid(x):
-    return math.tanh(x)
+	return np.tanh(x)
 
 # derivative of our sigmoid function, in terms of the output (i.e. y)
 def dsigmoid(y):
-    return 1.0 - y**2
+	return 1.0 - y**2
 
 
-def plot(inputs, outputs, actual):
-    """Plot a given function.  
-    
-    The actual function will be plotted with a line and the outputs with 
-    points.  Useful for visualizing the error of the neural networks attempt 
-    at function interpolation."""
-    try:
-        import matplotlib.pyplot
-    except:
-        raise ImportError, "matplotlib package not found."
-    fig = matplotlib.pyplot.figure()
-    ax1 = fig.add_subplot(111)
-    ax1.plot(inputs, actual, 'b-')
-    ax1.plot(inputs, outputs, 'r.')
-    matplotlib.pyplot.draw()
-    
-    
+class DB:
+	def __init__(self):
+		self.institutes = {}
+
+	def create_brain(self, institute, ni, nh, no):
+		brain = NN(ni, nh, no, True)
+		self.institutes.update({institute: brain})
+
+		return brain
+
 
 class NN:
-    def __init__(self, ni, nh, no, regression = False):
-        """NN constructor.
-        
-        ni, nh, no are the number of input, hidden and output nodes.
-        regression is used to determine if the Neural network will be trained 
-        and used as a classifier or for function regression.
-        """
-        
-        self.regression = regression
-        
-        #Number of input, hidden and output nodes.
-        self.ni = ni  + 1 # +1 for bias node
-        self.nh = nh  + 1 # +1 for bias node
-        self.no = no
+	def __init__(self, ni, nh, no, regression = False):
+		"""
+		The NN constructor.
+		
+		ni, nh, no are the number of input, hidden and output nodes.
+		regression is used to determine if the Neural network will be trained 
+		and used as a classifier or for function regression.
 
-        # activations for nodes
-        self.ai = [1.0]*self.ni
-        self.ah = [1.0]*self.nh
-        self.ao = [1.0]*self.no
-        
-        # create weights
-        self.wi = makeMatrix(self.ni, self.nh)
-        self.wo = makeMatrix(self.nh, self.no)
-        
-        # set them to random vaules
-        for i in range(self.ni):
-            for j in range(self.nh):
-                self.wi[i][j] = rand(-1, 1)
-        for j in range(self.nh):
-            for k in range(self.no):
-                self.wo[j][k] = rand(-1, 1)
+		"""
+		
+		self.regression = regression
+		
+		#Number of input, hidden and output nodes.
+		self.ni = int(ni  + 1) # +1 for bias node
+		self.nh = int(nh  + 1) # +1 for bias node
+		self.no = int(no)
 
-        # last change in weights for momentum   
-        self.ci = makeMatrix(self.ni, self.nh)
-        self.co = makeMatrix(self.nh, self.no)
+		# activations for nodes
+		# NumPy avoided as np.ones([1, self.ni]) takes 4 times longer!
+		self.ai = [1.0]*self.ni
+		self.ah = [1.0]*self.nh
+		self.ao = [1.0]*self.no
+		
+		# create weights and set to random values
+		self.wi = np.random.rand(self.ni, self.nh)
+		self.wo = np.random.rand(self.nh, self.no)
+		
 
+		# last change in weights for momentum   
+		self.ci = np.zeros([self.ni, self.nh])
+		self.co = np.zeros([self.nh, self.no])
 
-    def update(self, inputs):
-        if len(inputs) != self.ni-1:
-            raise ValueError, 'wrong number of inputs'
+		self.input_mean = [0.0]*int(ni)
+		self.input_std = [0.0]*int(ni)
 
-        # input activations
-        for i in range(self.ni - 1):
-            self.ai[i] = inputs[i]
+		self.output_mean = [0.0]*int(no)
+		self.output_std = [0.0]*int(no)
 
-        # hidden activations
-        for j in range(self.nh - 1):
-            total = 0.0
-            for i in range(self.ni):
-                total += self.ai[i] * self.wi[i][j]
-            self.ah[j] = sigmoid(total)
+	def normalise_input(self, input):
+		normalised = (asfarray(input) - asfarray(self.input_mean))
+		normalised /= asfarray(self.input_std)
+		normalised = list(normalised)
+		return normalised
 
-        # output activations
-        for k in range(self.no):
-            total = 0.0
-            for j in range(self.nh):
-                total += self.ah[j] * self.wo[j][k]
-            self.ao[k] = total
-            if not self.regression:
-                self.ao[k] = sigmoid(total)
-            
-        
-        return self.ao[:]
+	def real_output(self, output):
+		real = (asfarray(output) * asfarray(self.output_std)) + asfarray(self.output_mean)
+		return real
 
+	def update(self, inputs):
+		if len(inputs) != self.ni-1:
+			raise ValueError, 'wrong number of inputs'
 
-    def backPropagate(self, targets, N, M):
-        if len(targets) != self.no:
-            raise ValueError, 'wrong number of target values'
+		# input activations
+		# self.ai = list(inputs)
+		# self.ai.append(1)
+		# The above seems faster, but benchmarking yields that the below
+		# primitive method for assignment is faster.
+		for i in range(self.ni - 1):
+			self.ai[i] = inputs[i]
+		
+		self.ah = sigmoid(np.dot(asfarray(self.wi).T, asfarray(self.ai)))
 
-        # calculate error terms for output
-        output_deltas = [0.0] * self.no
-        for k in range(self.no):
-            output_deltas[k] = targets[k] - self.ao[k]
-            if not self.regression:
-                output_deltas[k] = dsigmoid(self.ao[k]) * output_deltas[k]
+		# Calculating Outputs
 
-        
-        # calculate error terms for hidden
-        hidden_deltas = [0.0] * self.nh
-        for j in range(self.nh):
-            error = 0.0
-            for k in range(self.no):
-                error += output_deltas[k]*self.wo[j][k]
-            hidden_deltas[j] = dsigmoid(self.ah[j]) * error
-
-        # update output weights
-        for j in range(self.nh):
-            for k in range(self.no):
-                change = output_deltas[k]*self.ah[j]
-                self.wo[j][k] = self.wo[j][k] + N*change + M*self.co[j][k]
-                self.co[j][k] = change
-
-        # update input weights
-        for i in range(self.ni):
-            for j in range(self.nh):
-                change = hidden_deltas[j]*self.ai[i]
-                self.wi[i][j] = self.wi[i][j] + N*change + M*self.ci[i][j]
-                self.ci[i][j] = change
-
-        # calculate error
-        error = 0.0
-        for k in range(len(targets)):
-            error += 0.5*((targets[k]-self.ao[k])**2)
-        return error
+		self.ao = np.dot(asfarray(self.wo).T, asfarray(self.ah))
+		if not self.regression:
+			self.ao = sigmoid(self.ao)
+		
+		return self.ao[:]
 
 
-    def test(self, patterns, verbose = False):
-        tmp = []
-        for p in patterns:
-            if verbose:
-                print p[0], '->', self.update(p[0])
-            tmp.append(self.update(p[0]))
 
-        return tmp
+	def backPropagate(self, targets, N, M):
+		if len(targets) != self.no:
+			raise ValueError, 'wrong number of target values'
 
-        
-    def weights(self):
-        print 'Input weights:'
-        for i in range(self.ni):
-            print self.wi[i]
-        print
-        print 'Output weights:'
-        for j in range(self.nh):
-            print self.wo[j]
+		# calculate error terms for output
+		output_deltas = asfarray(targets) - self.ao
+		if not self.regression:
+			output_deltas = dsigmoid(self.ao)*output_deltas
 
-    def train(self, patterns, iterations=1000, N=0.5, M=0.1, verbose = False):
-        """Train the neural network.  
-        
-        N is the learning rate.
-        M is the momentum factor.
-        """
-        for i in xrange(iterations):
-            error = 0.0
-            for p in patterns:
-                self.update(p[0])
-                tmp = self.backPropagate(p[1], N, M)
-                error += tmp
-                
-            if i % 100 == 0:
-                print 'error %-14f' % error
+		# calculate error terms for hidden
+
+		hidden_deltas = dsigmoid(self.ah) * np.dot(self.wo, output_deltas)
+
+		# update output weights
+		# Not vectorising, because of momentum effects!
+		# M eases convergence
+		for j in range(self.nh):
+			for k in range(self.no):
+				change = output_deltas[k]*self.ah[j]
+				self.wo[j][k] = self.wo[j][k] + N*change + M*self.co[j][k]
+				self.co[j][k] = change
+
+		# update input weights
+		for i in range(self.ni):
+			for j in range(self.nh):
+				change = hidden_deltas[j]*self.ai[i]
+				self.wi[i][j] = self.wi[i][j] + N*change + M*self.ci[i][j]
+				self.ci[i][j] = change
+
+
+		# Calculate and return error
+		error = 0.5*((asfarray(targets) - self.ao)**2)
+		return error
+
+		
+	def weights(self):
+		print 'Input weights:'
+		print self.wi
+
+		print
+		print 'Output weights:'
+		print self.wo
+
+	def load_norms(self, norms):
+
+		self.input_mean = norms[0]
+		self.input_std = norms[1]
+
+		self.output_mean = norms[2]
+		self.output_std = norms[3]
+
+
+	def train(self, patterns, norms, iterations, epsilon, N=0.5, M=0.1, verbose = False):
+		"""Train the neural network.  
+		
+		N is the learning rate.
+		M is the momentum factor.
+		"""
+		self.load_norms(norms)
+
+		error = 10
+		error_prev = 0
+		for i in xrange(iterations):
+			if (abs(error - error_prev) > epsilon) or error_prev > epsilon*100 :
+				error_prev = error
+				error = 0.0
+				for p in patterns:
+					self.update(p[0])
+					tmp = self.backPropagate(p[1], N, M)
+					error += tmp
+				
+				if i % 100 == 0:
+					print str(i/100) + ' error %-14f' % error
+
+
+			else:
+				print "Trained to accuracy " + str(epsilon)
+				break
+
 
 
 if sys.argv[1] == "train":
-    student_data = load_csv("student_data.csv")
-    college_data = load_csv("institutes.csv")
+	student_data = load_csv("student_data.csv")
+	college_data = load_csv("institutes.csv")
 
-    rel_input_sanction = [14, 15, 13]
-    rel_output_sanction = [10]
+	# relevant indices according to the zipped 2D list obtained from
+	# the two files; order is college_data:student_data
+	rel_input_sanction = [11, 12, 14] # Input params
+	rel_output_sanction = [10] # Output params
+	input_institute_name = [1] # Institute Names
 
-    institutes = ["A"]
-    for institute in institutes:
-    	
-    	inputs = []
-    	for row1 in college_data:
-    		row_clone = list(row1)
-    		if (row1[1] == institute):
-    			for row2 in student_data:
-    				if row2[0]==row1[0]:
-    					row_clone.extend(row2[1:])
-    					break
-    			inputs.append(row_clone)
-    	
-    	inputs = array(inputs)
-    	sanction_inputs = []
-    	sanction_outputs = []
-    	for row in inputs:
-    		sanction_inputs.append(map(int, list(row[[rel_input_sanction]])))
-    		sanction_outputs.append(map(int, list(row[[rel_output_sanction]])))
-    	
-    	epsilon = 1e-5
-    	max_iter = 10000
-        learning_rate = 0.25
+	hidden_layers = 4 # change this to change the model
 
-    	sanction_outputs = np.asfarray(sanction_outputs)
-    	sanction_inputs = np.asfarray(sanction_inputs)
+	# Create a unique list of institutes from the dataset
+	institutes = list()
+	for row in college_data:
+		institutes.append(row[1])
+	institutes = list(set(institutes))
 
-
-        sanction_inputs = normalise(sanction_inputs)
-        sanction_outputs = normalise(sanction_outputs)
-
-        data = []
-        for i in range(len(sanction_inputs)):
-            data.append([sanction_inputs[i], sanction_outputs[i]])
+	database = DB()
+	for institute in institutes:
+		inputs = []
+		for row1 in college_data:
+			row_clone = list(row1)
+			if (row1[1] == institute):
+				for row2 in student_data:
+					if row2[0]==row1[0]:
+						row_clone.extend(row2[1:])
+						break
+				inputs.append(row_clone)
+		
+		inputs = array(inputs)
+		sanction_inputs = []
+		sanction_outputs = []
+		for row in inputs:
+			sanction_inputs.append(map(float, list(row[[rel_input_sanction]])))
+			sanction_outputs.append(map(float, list(row[[rel_output_sanction]])))
+		
+		epsilon = 1e-5 # Degree of convergence of the descent
+		max_iter = 10000 # Upper bound on the number of iterations
+		learning_rate = 0.01
+		momentum_rate = 0.1
 
 
-        brain = NN (3, 4, 1, regression = True)
-        brain.train (data, 50000, 0.01, 0.1, False)
-        joblib.dump(brain, "trained_net.pkl")
+		sanction_outputs = np.asfarray(sanction_outputs)
+		sanction_inputs = np.asfarray(sanction_inputs)
+
+		sanction_inputs, input_mean, input_std = normalise(sanction_inputs)
+		sanction_outputs, output_mean, output_std = normalise(sanction_outputs)
+		norms = [input_mean, input_std, output_mean, output_std]
+
+		data = []
+		for i in range(len(sanction_inputs)):
+			data.append([sanction_inputs[i], sanction_outputs[i]])
+
+		brain = database.create_brain(institute, len(rel_input_sanction), hidden_layers, len(rel_output_sanction))
+
+		brain.train (data, norms, max_iter, epsilon, learning_rate, momentum_rate, False)
+	
+	joblib.dump(database, "trained_net.pkl")
+
 if sys.argv[1] == "predict":
-    brain = joblib.load("trained_net.pkl")
-    
-    while(1):
-        input_string = raw_input("Enter Details:")
-        details = map(int, input_string.split())
+	database = joblib.load("trained_net.pkl")
+	
+	while(1):
+		institute = str(raw_input("Enter institute: "))
+		brain = database.institutes[institute]
 
-        output = brain.update(details)
-        print output
+		input_string = raw_input("Enter Details: ")
+		input_data = map(float, input_string.split())
+		input_data[2] = math.log(input_data[2])
+		normalised_input = brain.normalise_input(input_data)
+		print normalised_input
+
+		output = brain.update(normalised_input)
+
+		print brain.real_output(output)
