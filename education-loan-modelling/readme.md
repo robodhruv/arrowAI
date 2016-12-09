@@ -45,3 +45,4 @@ As of the current version of the code, _no external packages_ would be required.
 * [_Completed_] Implemented a Deep Neural network to model the sanctioning process.
 * [_Completed_] Vectorise and optimise the code.
 * [_Suggestion_] Look at prospects of clustering the institutes based on certain similarities in trends.
+* Deployable Version ready, see `client.py`.
