@@ -12,8 +12,8 @@ Set up a model for deploying for a startup working with education loans, for sma
 
 The idea is to model the placement packages of the students from known data and predict the same for the applicant. For the monitoring part, we monitor the current performance of the candidate and try to update our predictions in a similar manner, getting a better estimate with time.
 
-For the former part, we work with a dataset about placement records of various concerned institutes and students. We maintain a ranking system of the institutes based on (say) average package, and use that as a feature. The complete set of features would look like:
-* Institute Ranking
+For the former part, we work with a dataset about placement records of various concerned institutes and students. We maintain the logs of every institute, including past and current student records. The complete set of features would look like:
+* Entrance Examination Ranking
 * Class 10 Records
 * Class 12 Records
 

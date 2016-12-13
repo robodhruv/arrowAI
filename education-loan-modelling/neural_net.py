@@ -211,6 +211,7 @@ if sys.argv[1] == "train":
 
 	# relevant indices according to the zipped 2D list obtained from
 	# the two files; order is college_data:student_data
+	
 	rel_input_sanction = [11, 12, 14] # Input params
 	rel_output_sanction = [10] # Output params
 	input_institute_name = [1] # Institute Names
