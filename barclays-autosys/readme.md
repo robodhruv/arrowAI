@@ -66,3 +66,23 @@ The following topics are not very clear from online resources (or based on the r
 * With regard to [__box jobs__](http://autosys-tutorial-beginner.blogspot.in/2015/09/chapter-6-box-jobs.html), how do you handle them?
 * The query only returns last run details. How to obtain the logs for a period?
 * What are the fields *Run/Ntry* and *Pri/Xit* in the logs?
+
+
+### The Model
+I decided to approach the problem using HMMs at first. After thorough reading and implementation attempts on an HMM based predictor, the conclusion was to drop the idea as:
+* HMMs are majorly set for predicting/understanding the set of states in the past, given the unprocessed data.
+* The model is very basic and would not be able to reciprocate complex job-level linkings.
+* Maintaining multiple models and then linking them is a possibility, but too naive and superficial.
+
+A good way to deal with the problem would be to approach it as a time series, and work on the time series forecasting, as is done in the cases of finance or weather. The next suitable model would be using `ARIMA`. A synopsis of the conclusions after studying _ARIMA_ is as follows.
+* ARIMA can be a great model for predicting data, but it relies on two basic assumptions:
+  - The data is highly periodic/seasonal, and the trends will stay.
+  - It is not a _learning_ based system, pure statistics. Thus, it cannot account for a sudden change in trends, or outliers.
+* Also, ARIMA does not involve any linking or dependencies, the way we require for our graph-based approach. The prediction would be purely based on their individual histories.
+
+#### The ARIMA + HMM Model
+
+
+#### The LSTM-Based Model
+
+[Click Here.](lstm.md)
