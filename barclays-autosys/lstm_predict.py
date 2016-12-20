@@ -9,22 +9,22 @@ Run this script on tensorflow r0.10. Errors appear when using lower versions.
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from csv import reader
+import csv
 
 
 BATCH_START = 0
-TIME_STEPS = 5
-BATCH_SIZE = 10
+TIME_STEPS = 20
+BATCH_SIZE = 30
 INPUT_SIZE = 1
 OUTPUT_SIZE = 1
 CELL_SIZE = 10
-LR = 0.06
+LR = 0.006
 
 
 def load_csv(filename):
     dataset = list()
     with open(filename, 'r') as file:
-        csv_reader = reader(file)
+        csv_reader = csv.reader(file)
         for row in csv_reader:
             if not row:
                 continue
@@ -33,6 +33,7 @@ def load_csv(filename):
 
 data = np.array(load_csv('data.csv'))
 print "Done Reading!"
+print (len(data))
 
 
 def get_batch():
@@ -42,7 +43,7 @@ def get_batch():
     # seq_complete
     xs = data[BATCH_START: BATCH_START+(TIME_STEPS*BATCH_SIZE), 0].reshape((BATCH_SIZE, TIME_STEPS))
     seq = data[BATCH_START: BATCH_START+(TIME_STEPS*BATCH_SIZE), 1].reshape((BATCH_SIZE, TIME_STEPS))
-    res = data[BATCH_START+1: BATCH_START+(TIME_STEPS*BATCH_SIZE) +1, 1].reshape((BATCH_SIZE, TIME_STEPS))
+    res = data[BATCH_START+4: BATCH_START+(TIME_STEPS*BATCH_SIZE) +4, 1].reshape((BATCH_SIZE, TIME_STEPS))
     # xs shape (50batch, 20steps)
     # xs = np.arange(BATCH_START, BATCH_START+TIME_STEPS*BATCH_SIZE).reshape((BATCH_SIZE, TIME_STEPS)) / (10*np.pi)
     # xs_shifted = np.arange(BATCH_START+1, (BATCH_START+TIME_STEPS*BATCH_SIZE) +1).reshape((BATCH_SIZE, TIME_STEPS)) / (10*np.pi)
@@ -125,7 +126,7 @@ class LSTMRNN(object):
         return tf.square(tf.sub(y_pre, y_target))
 
     def _weight_variable(self, shape, name='weights'):
-        initializer = tf.random_normal_initializer(mean=0., stddev=1.,)
+        initializer = tf.random_normal_initializer(mean=0., stddev=0.5,)
         return tf.get_variable(shape=shape, initializer=initializer, name=name)
 
     def _bias_variable(self, shape, name='biases'):
@@ -146,10 +147,14 @@ if __name__ == '__main__':
     # relocate to the local dir and run this line to view it on Chrome (http://0.0.0.0:6006/):
     # $ tensorboard --logdir='logs'
 
-    plt.ion()
-    plt.show()
-    for i in range(3600):
+    res_all = []
+    pred_all = []
+    seq_all = []
+    # plt.ion()
+    # plt.show()
+    for i in range((len(data)-BATCH_SIZE*TIME_STEPS)/TIME_STEPS):
         seq, res, xs = get_batch()
+        pred = []
         if i == 0:
             feed_dict = {
                     model.xs: seq,
@@ -167,13 +172,30 @@ if __name__ == '__main__':
             [model.train_op, model.cost, model.cell_final_state, model.pred],
             feed_dict=feed_dict)
 
+        res_all.extend(res[0].flatten())
+        seq_all.extend(seq[0].flatten())
+        pred_all.extend(pred.flatten()[:TIME_STEPS])
+        # store.append([res[0].flatten(), pred.flatten()[:TIME_STEPS]])
             # plotting
-        plt.plot(xs[0, :], res[0].flatten(), 'r', xs[0, :], pred.flatten()[:TIME_STEPS], 'b--')
-        plt.ylim((0.4, 0.6))
-        plt.draw()
+        # plt.plot(xs[0, :], res[0].flatten(), 'r', xs[0, :], pred.flatten()[:TIME_STEPS], 'b--')
+        # plt.ylim((0.4, 0.6))
+        # plt.draw()
         # plt.pause(0.00000000000001)
 
         if i % 20 == 0:
-            print('cost: ', round(cost, 4))
-            result = sess.run(merged, feed_dict)
-            writer.add_summary(result, i)
+            print('cost: %s' %round(cost, 4))
+            # result = sess.run(merged, feed_dict)
+            # writer.add_summary(result, i)
+    print "Writing Now."
+    with open('output.csv', 'wb') as file:
+        csvwriter = csv.writer(file)
+        for i in range(len(res_all)-1):
+            csvwriter.writerow([res_all[i], seq_all[i], pred_all[i]])
+
+        seq = seq.flatten()
+        res = res.flatten()
+        pred = pred.flatten()
+        for i in range(len(seq)):
+            csvwriter.writerow([res[i], seq[i], pred[i]])
+
+        # csvwriter.writerow(pred_all)
