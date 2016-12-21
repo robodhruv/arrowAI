@@ -6,6 +6,7 @@
 <!-- Copyright 1998-2016 by Northwoods Software Corporation. -->
 <meta charset="UTF-8">
 <!-- <script src="go.js"></script> -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/1.6.21/go.js"></script>  <!-- this is only for the GoJS Samples framework -->
 <script id="code">
   function init() {
@@ -185,6 +186,13 @@
             { fill: "rgba(128,128,128,0.2)", stroke: "gray", strokeWidth: 3 }),
           $(go.Placeholder, { padding: 10 })  // represents where the members are
         ),
+        $(go.Panel, "Horizontal",  // the header
+          { defaultAlignment: go.Spot.Top },
+          $("SubGraphExpanderButton"),  // this Panel acts as a Button
+          $(go.TextBlock,     // group title near top, next to button
+            { font: "Bold 12pt Sans-Serif" },
+            new go.Binding("text", "key"))
+        ),
         { // this tooltip Adornment is shared by all groups
           toolTip:
             $(go.Adornment, "Auto",
@@ -227,20 +235,24 @@
       );
 
     // Create the Diagram's Model:
-    var nodeDataArray = [
-      { key: 1, text: "Job ", color: "lightblue" },
-      { key: 2, text: "Job 3", color: "orange" },
-      { key: 3, text: "Job 1", color: "lightgreen", group: 'b5' },
+    jQuery.get("http://localhost:8000/nodes", function(data) {
+      var nodeDataArray = data.nodes;
+      /*var nodeDataArray = [
+      { 'key': 1, text: "Job 3" },
+      { 'key': 2, text: "Job 4", color: "orange" },
+      { 'key': 3, text: "Job 1", color: "lightgreen", group: 'b5' },
       { key: 4, text: "Job 2", color: "pink", group: 'b5' },
       { key: 'b5', text: "Box 1", color: "green", isGroup: true }
-    ];
-    var linkDataArray = [
-      { from: 1, to: 2, color: "blue" },
-      { from: 2, to: 2 },
-      { from: 3, to: 4, color: "green" },
-      { from: 'b5', to: 1, color: "hsl(100, 100%, 40%)" }
-    ];
-    myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
+    ];*/
+      jQuery.get("http://localhost:8000/links", function(data) {
+
+        var linkDataArray = data.links;
+        myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
+      
+      });
+    });
+
+    
   }
 </script>
 </head>

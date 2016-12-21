@@ -29,11 +29,11 @@ command: isql -U mutt -P jeff
 std_in_file: /DOWNLOAD/MAINFRAME/SALES.SQL
 insert_job: database
 job_type: box
+condition: success(parse_data)
 machine: lowgate
 insert_job: upload
 job_type: cmd
 box_name: database
-condition: success(parse_data)
 machine: lowgate
 command: <...>
 std_out_file: /LOG/parse_data.out
