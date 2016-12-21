@@ -151,7 +151,7 @@ if __name__ == '__main__':
 	seq_all = []
 	# plt.ion()
 	# plt.show()
-	for i in range(1):
+	for i in range(3):
 		for i in range((len(data)-BATCH_SIZE*TIME_STEPS)/TIME_STEPS):
 			seq, res, xs = get_batch()
 			pred = []
