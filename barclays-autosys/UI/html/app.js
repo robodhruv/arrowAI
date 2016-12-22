@@ -25,6 +25,7 @@ function init() {
     document.getElementById("diagramEventsMsg_Node").textContent = b.key;
     console.log(b);
     jQuery("#saveBtn").attr("data-key", b.key);
+    jQuery("#saveBtn").attr("data-time", b.time);
     var type;
 
     if (b.isGroup){
@@ -106,6 +107,17 @@ function init() {
       return str;
     }
 
+function incrementCounter(e, obj) {
+    var node = obj.part;
+    var data = node.data;
+    if (data) {
+      node.diagram.startTransaction("clicked");
+      var old = data.clickCount;
+      data.clickCount++;
+      node.diagram.model.raiseDataChanged(data, "clickCount", old, data.clickCount);
+      node.diagram.commitTransaction("clicked");
+    }
+  }
     // These nodes have text surrounded by a rounded rectangle
     // whose fill color is bound to the node data.
     // The user can drag a node by dragging its TextBlock label.
@@ -124,12 +136,14 @@ function init() {
           new go.Binding("fill", "color")),
         $(go.Panel, "Table",
           { defaultAlignment: go.Spot.Left },
-          $(go.TextBlock, { row: 0, column: 0, columnSpan: 2, font: "bold 12pt sans-serif" },
+          $(go.TextBlock, { row: 0, column: 0, columnSpan: 2, alignment: go.Spot.Center,  font: "bold 12pt sans-serif" },
             new go.Binding("text", "text").makeTwoWay()),
           $(go.TextBlock, { row: 1, column: 0 }, "Expected Run Time:"),
-          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "key")),
+          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "default")),
           $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
-          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "key"))
+          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time")),
+          // $(go.TextBlock, { row: 3, column: 0 }, "Documentation:"),
+          $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation Here")
           // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
           // $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "color"))
         )
@@ -154,7 +168,7 @@ function init() {
         { // this tooltip Adornment is shared by all links
           toolTip:
             $(go.Adornment, "Auto",
-              $(go.Shape, { fill: "#FFFFCC" }),
+              $(go.Shape, { fill: "hsl(70, 100%, 100%)" }),
               $(go.TextBlock, { margin: 4 },  // the tooltip shows the result of calling linkInfo(data)
                 new go.Binding("text", "", linkInfo))
             ),
@@ -262,22 +276,74 @@ function init() {
     });
     jQuery("#saveBtn").on("click", function() {
       console.log('hello')
-        var SLA = jQuery("#SLA").val()
+        var SLA = parseFloat(jQuery("#SLA").val())
         var Comp_Time = jQuery("CompletionTime").val()
         var key = jQuery(this).attr("data-key");
-        console.log(key)
+        var time = parseFloat(jQuery(this).attr("data-time"))
+        // console.log(key)
         var data = myDiagram.model.findNodeDataForKey(key);
-        console.log(data)
+        var url = jQuery("#url").val()
+        // console.log(data)
         // This will update the color of the "Delta" Node
-        if (data !== null) myDiagram.model.setDataProperty(data, "color", "green");
+        var color = getColor(time ,SLA)
+
+        if (!!SLA){
+            if (data !== null) myDiagram.model.setDataProperty(data, "color", color);
+            if (data !== null) myDiagram.model.setDataProperty(data, "default", SLA);
+        }
+        if (!! url) if (data !== null) myDiagram.model.setDataProperty(data, "url", url);
+
         // var node = document.getElementById("diagramEventsMsg_Node").textContent
 
+        alert("Saved Changes!")
     });
 
 
     
   }
 
+function hsv2rgb(h, s, v) {
+  // var h = hsv.hue, s = hsv.sat, v = hsv.val;
+  var rgb, i, data = [];
+  if (s === 0) {
+    rgb = [v,v,v];
+  } else {
+    h = h / 60;
+    i = Math.floor(h);
+    data = [v*(1-s), v*(1-s*(h-i)), v*(1-s*(1-(h-i)))];
+    switch(i) {
+      case 0:
+        rgb = [v, data[2], data[0]];
+        break;
+      case 1:
+        rgb = [data[1], v, data[0]];
+        break;
+      case 2:
+        rgb = [data[0], v, data[2]];
+        break;
+      case 3:
+        rgb = [data[0], data[1], v];
+        break;
+      case 4:
+        rgb = [data[2], data[0], v];
+        break;
+      default:
+        rgb = [v, data[0], data[1]];
+        break;
+    }
+  }
+  return '#' + rgb.map(function(x){ 
+    return ("0" + Math.round(x*255).toString(16)).slice(-2);
+  }).join('');
+};
+
+function getColor(current, threshold){
+  var val = 60.0 + 90*(threshold-current)/threshold
+  if (val < 0) val = 0
+  else if (val > 120) val = 120 
+  var color = hsv2rgb(val, 1, 1)
+  return color
+}
 
 function change(e, obj){
       // OBJ is this Button
@@ -287,6 +353,6 @@ function change(e, obj){
    if (part instanceof go.Link) alert(linkInfo(part.data));
    else if (part instanceof go.Group) alert(groupInfo(contextmenu));
    else alert(nodeInfo(part.data));
-                     
+
 }
 
