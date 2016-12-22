@@ -2,6 +2,17 @@
 insert_machine: lowgate
 type: a
 # Example of Jobs
+
+insert_job: Local_Files
+job_type: box
+
+insert_job: scan_disk
+box_name: Local_Files
+default: 10
+insert_job: load_files
+box_name: Local_Files
+default: 15
+condition: success(scan_disk)
 insert_job: Nightly_Download
 job_type: box
 date_conditions: yes
@@ -9,11 +20,14 @@ days_of_week: all
 start_times: "02:00"
 insert_job: Watch_4_file
 job_type: ft
+default: 25
 box_name: Nightly_Download
+condition: success(load_files)
 watch_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 watch_file_type: generate
 machine: lowgate
 insert_job: filter_data
+default: 10
 job_type: cmd
 box_name: Nightly_Download
 condition: success(Watch_4_file)
@@ -23,18 +37,28 @@ std_in_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 insert_job: parse_data
 job_type: cmd
 box_name: Nightly_Download
+default: 15
 condition: success(filter_data)
 machine: lowgate
 command: isql -U mutt -P jeff
 std_in_file: /DOWNLOAD/MAINFRAME/SALES.SQL
 insert_job: database
 job_type: box
+machine: lowgate
+insert_job: fetch_connection
+job_type: cmd
+default: 12
+box_name: database
 condition: success(parse_data)
 machine: lowgate
-insert_job: upload
-job_type: cmd
-box_name: database
-machine: lowgate
 command: <...>
+insert_job: establish_connection
+box_name: database
+condition: success(fetch_connection)
+insert_job: upload
+default: 15
+box_name: database
+condition: success(establish_connection)
+
 std_out_file: /LOG/parse_data.out
 std_err_file: /LOG/LOG/parse_data.err

@@ -135,7 +135,7 @@ class LSTMRNN(object):
 		return tf.get_variable(name=name, shape=shape, initializer=initializer)
 
 
-if __name__ == '__main__':
+def train():
 	model = LSTMRNN(TIME_STEPS, INPUT_SIZE, OUTPUT_SIZE, CELL_SIZE, BATCH_SIZE)
 	sess = tf.Session()
 	merged = tf.merge_all_summaries()
@@ -151,7 +151,7 @@ if __name__ == '__main__':
 	seq_all = []
 	# plt.ion()
 	# plt.show()
-	for i in range(3):
+	for i in range(1):
 		for i in range((len(data)-BATCH_SIZE*TIME_STEPS)/TIME_STEPS):
 			seq, res, xs = get_batch()
 			pred = []
@@ -207,3 +207,4 @@ if __name__ == '__main__':
 		#     csvwriter.writerow([res[i], seq[i], pred[i]])
 
 		# csvwriter.writerow(pred_all)
+
