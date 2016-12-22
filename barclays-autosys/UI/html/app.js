@@ -18,11 +18,13 @@ function init() {
           "undoManager.isEnabled": true
         });
   function showMessage(s, b) {
-    jQuery("#sidePanel").removeClass('hidden').addClass('col-md-3');
-    jQuery("#myDiagramDiv").removeClass("col-md-12").addClass("col-md-9")
+    jQuery("#sidePanel").removeClass('hidden').addClass('col-md-3').addClass("col-sm-3");
+    jQuery("#myDiagramDiv").removeClass("col-md-12").removeClass("col-sm-12").addClass("col-md-9").addClass("col-sm-9")
 
     // document.getElementById("diagramEventsMsg").textContent = s;
     document.getElementById("diagramEventsMsg_Node").textContent = b.key;
+    console.log(b);
+    jQuery("#saveBtn").attr("data-key", b.key);
     var type;
 
     if (b.isGroup){
@@ -125,9 +127,9 @@ function init() {
           $(go.TextBlock, { row: 0, column: 0, columnSpan: 2, font: "bold 12pt sans-serif" },
             new go.Binding("text", "text").makeTwoWay()),
           $(go.TextBlock, { row: 1, column: 0 }, "Expected Run Time:"),
-          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "val")),
+          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "key")),
           $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
-          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", ""))
+          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "key"))
           // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
           // $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "color"))
         )
@@ -189,7 +191,7 @@ function init() {
           new go.Binding("stroke", "color")),
         $(go.Panel, "Auto",
           { name: "PANEL" },
-          $(go.Shape, "Rectangle",  // the rectangular shape around the members
+          $(go.Shape, "RoundedRectangle",  // the rectangular shape around the members
             { fill: "#D3D3D3", stroke: "black", strokeWidth: 3 }),
           $(go.Placeholder, { padding: 10 })  // represents where the members are
         ),
@@ -258,9 +260,24 @@ function init() {
       
       });
     });
+    jQuery("#saveBtn").on("click", function() {
+      console.log('hello')
+        var SLA = jQuery("#SLA").val()
+        var Comp_Time = jQuery("CompletionTime").val()
+        var key = jQuery(this).attr("data-key");
+        console.log(key)
+        var data = myDiagram.model.findNodeDataForKey(key);
+        console.log(data)
+        // This will update the color of the "Delta" Node
+        if (data !== null) myDiagram.model.setDataProperty(data, "color", "green");
+        // var node = document.getElementById("diagramEventsMsg_Node").textContent
+
+    });
+
 
     
   }
+
 
 function change(e, obj){
       // OBJ is this Button
@@ -272,10 +289,4 @@ function change(e, obj){
    else alert(nodeInfo(part.data));
                      
 }
-function changeValue() {
-    var SLA = jQuery("#SLA").val()
-    var Comp_Time = jQuery("CompletionTime").val()
-    var node = document.getElementById("diagramEventsMsg_Node").textContent
-    
 
-}
