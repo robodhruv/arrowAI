@@ -143,7 +143,7 @@ function incrementCounter(e, obj) {
           $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
           $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time")),
           // $(go.TextBlock, { row: 3, column: 0 }, "Documentation:"),
-          $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation Here")
+          $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation")
           // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
           // $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "color"))
         )
@@ -214,7 +214,20 @@ function incrementCounter(e, obj) {
           $("SubGraphExpanderButton"),  // this Panel acts as a Button
           $(go.TextBlock,     // group title near top, next to button
             { font: "Bold 12pt Sans-Serif" },
-            new go.Binding("text", "key"))
+            new go.Binding("text", "key")),
+          $(go.Panel, "Table",
+          { defaultAlignment: go.Spot.Left },
+          $(go.TextBlock, { row: 0, column: 0, columnSpan: 2, alignment: go.Spot.Center,  font: "bold 12pt sans-serif" },
+            new go.Binding("text", "text").makeTwoWay()),
+          $(go.TextBlock, { row: 1, column: 0 }, "Expected Run Time:"),
+          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "default")),
+          $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
+          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time"))
+          // $(go.TextBlock, { row: 3, column: 0 }, "Documentation:"),
+          // $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation Here")
+          // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
+          // $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "color"))
+        )
         ),
         { // this tooltip Adornment is shared by all groups
           toolTip:
@@ -275,7 +288,7 @@ function incrementCounter(e, obj) {
       });
     });
     jQuery("#saveBtn").on("click", function() {
-      console.log('hello')
+      // console.log('hello')
         var SLA = parseFloat(jQuery("#SLA").val())
         var Comp_Time = jQuery("CompletionTime").val()
         var key = jQuery(this).attr("data-key");

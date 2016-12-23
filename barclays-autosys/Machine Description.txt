@@ -9,9 +9,11 @@ job_type: box
 insert_job: scan_disk
 box_name: Local_Files
 default: 10
+time: 15
 insert_job: load_files
 box_name: Local_Files
 default: 15
+time: 10
 condition: success(scan_disk)
 insert_job: Nightly_Download
 job_type: box
@@ -20,6 +22,7 @@ days_of_week: all
 start_times: "02:00"
 insert_job: Watch_4_file
 job_type: ft
+time: 15
 default: 25
 box_name: Nightly_Download
 condition: success(load_files)
@@ -27,6 +30,7 @@ watch_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 watch_file_type: generate
 machine: lowgate
 insert_job: filter_data
+time: 50
 default: 10
 job_type: cmd
 box_name: Nightly_Download
@@ -35,6 +39,7 @@ command: filter_mainframe_info
 machine: lowgate
 std_in_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 insert_job: parse_data
+time: 13
 job_type: cmd
 box_name: Nightly_Download
 default: 15
@@ -48,6 +53,7 @@ machine: lowgate
 insert_job: fetch_connection
 job_type: cmd
 default: 12
+time: 15
 box_name: database
 condition: success(parse_data)
 machine: lowgate
@@ -55,8 +61,12 @@ command: <...>
 insert_job: establish_connection
 box_name: database
 condition: success(fetch_connection)
+default: 20
+time: 17
+
 insert_job: upload
 default: 15
+time: 11
 box_name: database
 condition: success(establish_connection)
 

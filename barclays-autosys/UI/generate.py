@@ -13,7 +13,7 @@ with open('../Machine Description.txt', 'rb') as file:
     for i in range(len(jil)):
         if (jil[i].startswith('insert_job')):
             job_indices.append(i)
-    jobs = []
+    # jobs = []
     for i in range(len(job_indices) - 1):
         jobs.append(jil[job_indices[i]:job_indices[i + 1]])
 
@@ -33,7 +33,8 @@ def getColor(current, threshold):
     color = '#%02x%02x%02x' % (color[0], color[1], color[2])
     return color
 
-print getColor(10,15)
+# print getColor(10,15)
+
 
 def nodes():
 
@@ -59,12 +60,28 @@ def nodes():
                 d['default'] = line.split(':')[1].strip()
         if (not d['isGroup'] == "true"):
             d['text'] = d['key']
-            del d['isGroup']
+            # del d['isGroup']
 
         
         nodes.append(d)
 
+    for node in nodes:
+        if (node['isGroup'] == "true"):
+            node['time'] = 0.0
+            node['default'] = 0.0
+            # print node
+            for node2 in nodes:
+                if (not node2['isGroup'] == "true"):
+                    if node2['group'] == node['key']:
+                        node['default'] += float(node2['default'])
+                        node['time'] += float(node2['time'])
+
     return nodes
+
+def box_info():
+    pass
+    
+# nodes()
 
 def links():
     links = []
