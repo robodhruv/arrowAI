@@ -17,6 +17,10 @@ function init() {
           // enable undo & redo
           "undoManager.isEnabled": true
         });
+
+
+
+
   function showMessage(s, b) {
     jQuery("#sidePanel").removeClass('hidden').addClass('col-md-3').addClass("col-sm-3");
     jQuery("#myDiagramDiv").removeClass("col-md-12").removeClass("col-sm-12").addClass("col-md-9").addClass("col-sm-9")
@@ -25,6 +29,8 @@ function init() {
     document.getElementById("diagramEventsMsg_Node").textContent = b.key;
     console.log(b);
     jQuery("#saveBtn").attr("data-key", b.key);
+    if (!b.status) b.status = "completed" 
+    jQuery("#saveBtn").attr("data-status", b.status)
     jQuery("#saveBtn").attr("data-time", b.time);
     var type;
 
@@ -134,22 +140,56 @@ function incrementCounter(e, obj) {
             toLinkable: true, toLinkableSelfNode: true, toLinkableDuplicates: true
           },
           new go.Binding("fill", "color")),
+        $(go.Panel, "Spot",
+        new go.Binding("opacity", "status", function(t) { return t ? 1 : 0; }),
+        // note that the opacity defaults to zero (not visible),
+        // in case there is no "ribbon" property
+        { opacity: 0.7,
+          alignment: new go.Spot(1, 0, 5, -5),
+          alignmentFocus: go.Spot.TopRight },
+        $(go.Shape,  // the ribbon itself
+          { geometryString: "F1 M0 0 L30 0 70 40 70 70z",
+            fill: "red", stroke: null, strokeWidth: 0 }),
+        $(go.TextBlock,
+          new go.Binding("text", "status"),
+          { alignment: new go.Spot(1, 0, -29, 29),
+            angle: 45, maxSize: new go.Size(100, NaN),
+            stroke: "white", font: "bold 10px sans-serif", textAlign: "center" })
+      ),
         $(go.Panel, "Table",
           { defaultAlignment: go.Spot.Left },
-          $(go.TextBlock, { row: 0, column: 0, columnSpan: 2, alignment: go.Spot.Center,  font: "bold 12pt sans-serif" },
+          $(go.TextBlock, { row: 3, column: 0, columnSpan: 2, alignment: go.Spot.Center,  font: "bold 12pt sans-serif" },
             new go.Binding("text", "text").makeTwoWay()),
-          $(go.TextBlock, { row: 1, column: 0 }, "Expected Run Time:"),
-          $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "default")),
-          $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
-          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time")),
+          $(go.TextBlock, { row: 0, column: 0, columnSpan:2 }, ""),
+          $(go.TextBlock, { row: 1, column: 0, columnSpan:2 }, ""),
+          $(go.TextBlock, { row: 2, column: 0, columnSpan:2 }, ""),
+
+          $(go.TextBlock, { row: 4, column: 0 }, "Average Run Time:"),
+          $(go.TextBlock, { row: 4, column: 1 }, new go.Binding("text", "default")),
+          $(go.TextBlock, { row: 5, column: 0 }, new go.Binding("text", "status", getStatus)),
+          $(go.TextBlock, { row: 5, column: 1 }, new go.Binding("text", "time")),
+          $(go.TextBlock, { row: 6, column: 0 }, "Ends At"),
+          $(go.TextBlock, { row: 6, column: 1 }, new go.Binding("text", "cum")),
           // $(go.TextBlock, { row: 3, column: 0 }, "Documentation:"),
-          $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation")
+          $(go.TextBlock, { row: 7, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation")
           // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
           // $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "color"))
         )
       );
 
     // Define the appearance and behavior for Links:
+    function getStatus(status){
+      // var status = content.content
+      // console.log(content);
+      console.log(status)
+      if (status == "completed") {
+        var out = "Last Run Time:"
+      } else {
+        var out = "Predicted Run Time:"
+      }
+
+      return out
+    }
 
     function linkInfo(d) {  // Tooltip info for a link data object
       return "Link:\nfrom " + d.from + " to " + d.to;
@@ -222,7 +262,9 @@ function incrementCounter(e, obj) {
           $(go.TextBlock, { row: 1, column: 0 }, "Expected Run Time:"),
           $(go.TextBlock, { row: 1, column: 1 }, new go.Binding("text", "default")),
           $(go.TextBlock, { row: 2, column: 0 }, "Last Run Time:"),
-          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time"))
+          $(go.TextBlock, { row: 2, column: 1 }, new go.Binding("text", "time")),
+          $(go.TextBlock, { row: 6, column: 0 }, "Ends At"),
+          $(go.TextBlock, { row: 6, column: 1 }, new go.Binding("text", "cum"))
           // $(go.TextBlock, { row: 3, column: 0 }, "Documentation:"),
           // $(go.TextBlock, { row: 3, column: 0, alignment: go.Spot.Center, columnSpan: 2, font: "bold 7pt sans-serif" , click: function(e, obj) {window.open(obj.part.data.url)}}, "Documentation Here")
           // $(go.TextBlock, { row: 2, column: 0 }, "Color:"),
@@ -285,8 +327,22 @@ function incrementCounter(e, obj) {
         var linkDataArray = data.links;
         myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
       
+        jQuery.get("http://localhost:8000/time_details", function(data) {
+          var timings = data.times
+          var start_time = timings.start_time
+          var end_time_pred = timings.end_time_pred
+          var end_time_target = timings.end_time_target
+          // console.log(start_time)
+
+          document.getElementById("display").textContent = "Started At: " + start_time + " | Predicted End Time: " + end_time_pred +  " | Avg. End Time: " + end_time_target;
+
+        });
       });
+
+
     });
+
+
     jQuery("#saveBtn").on("click", function() {
       // console.log('hello')
         var SLA = parseFloat(jQuery("#SLA").val())
@@ -296,9 +352,11 @@ function incrementCounter(e, obj) {
         // console.log(key)
         var data = myDiagram.model.findNodeDataForKey(key);
         var url = jQuery("#url").val()
-        // console.log(data)
+        var status = jQuery(this).attr("data-status")
+
+        // console.log(status)
         // This will update the color of the "Delta" Node
-        var color = getColor(time ,SLA)
+        var color = getColor(time ,SLA, status)
 
         if (!!SLA){
             if (data !== null) myDiagram.model.setDataProperty(data, "color", color);
@@ -350,13 +408,18 @@ function hsv2rgb(h, s, v) {
   }).join('');
 };
 
-function getColor(current, threshold){
+function getColor(current, threshold, status){
+
+  var sat = 1;
+  if (status == "incomplete") sat = 0
   var val = 60.0 + 90*(threshold-current)/threshold
   if (val < 0) val = 0
   else if (val > 120) val = 120 
-  var color = hsv2rgb(val, 1, 1)
+  var color = hsv2rgb(val, sat, 1)
   return color
 }
+
+
 
 function change(e, obj){
       // OBJ is this Button

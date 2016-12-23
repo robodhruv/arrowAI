@@ -3,35 +3,54 @@ insert_machine: lowgate
 type: a
 # Example of Jobs
 
+insert_job: Application
+job_type: box
+default: 72
+time: 50
+cum: 3-53
+
 insert_job: Local_Files
 job_type: box
+box_name: Application
+cum: 2-35
 
 insert_job: scan_disk
 box_name: Local_Files
+status: completed
 default: 10
+cum: 2-25
 time: 15
 insert_job: load_files
 box_name: Local_Files
+status: completed
 default: 15
 time: 10
+cum: 2-35
 condition: success(scan_disk)
 insert_job: Nightly_Download
+status: completed
 job_type: box
+box_name: Application
+cum: 3-53
 date_conditions: yes
 days_of_week: all
 start_times: "02:00"
 insert_job: Watch_4_file
+status: completed
 job_type: ft
 time: 15
 default: 25
+cum: 2-50
 box_name: Nightly_Download
 condition: success(load_files)
 watch_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 watch_file_type: generate
 machine: lowgate
 insert_job: filter_data
+status: completed
 time: 50
 default: 10
+cum: 3-40
 job_type: cmd
 box_name: Nightly_Download
 condition: success(Watch_4_file)
@@ -39,10 +58,12 @@ command: filter_mainframe_info
 machine: lowgate
 std_in_file: /DOWNLOAD/MAINFRAME/SALES.RAW
 insert_job: parse_data
+status: completed
 time: 13
 job_type: cmd
 box_name: Nightly_Download
 default: 15
+cum: 3-53
 condition: success(filter_data)
 machine: lowgate
 command: isql -U mutt -P jeff
@@ -50,23 +71,30 @@ std_in_file: /DOWNLOAD/MAINFRAME/SALES.SQL
 insert_job: database
 job_type: box
 machine: lowgate
+cum: 4-36
 insert_job: fetch_connection
+status: incomplete
 job_type: cmd
 default: 12
 time: 15
+cum: 4-08
 box_name: database
 condition: success(parse_data)
 machine: lowgate
 command: <...>
 insert_job: establish_connection
 box_name: database
+status: incomplete
 condition: success(fetch_connection)
 default: 20
 time: 17
+cum: 4-25
 
 insert_job: upload
 default: 15
+status: incomplete
 time: 11
+cum: 4-36
 box_name: database
 condition: success(establish_connection)
 
