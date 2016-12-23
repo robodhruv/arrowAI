@@ -24,10 +24,14 @@ function init() {
   function showMessage(s, b) {
     jQuery("#sidePanel").removeClass('hidden').addClass('col-md-3').addClass("col-sm-3");
     jQuery("#myDiagramDiv").removeClass("col-md-12").removeClass("col-sm-12").addClass("col-md-9").addClass("col-sm-9")
-
+    
+    if ( b.status == "incomplete") {
+      jQuery('#CompletionTime').removeClass('hidden')
+    } else jQuery('#CompletionTime').removeClass('hidden').addClass('hidden')
+        
     // document.getElementById("diagramEventsMsg").textContent = s;
     document.getElementById("diagramEventsMsg_Node").textContent = b.key;
-    console.log(b);
+    // console.log(b);
     jQuery("#saveBtn").attr("data-key", b.key);
     if (!b.status) b.status = "completed" 
     jQuery("#saveBtn").attr("data-status", b.status)
@@ -181,7 +185,7 @@ function incrementCounter(e, obj) {
     function getStatus(status){
       // var status = content.content
       // console.log(content);
-      console.log(status)
+      // console.log(status)
       if (status == "completed") {
         var out = "Last Run Time:"
       } else {
@@ -242,11 +246,12 @@ function incrementCounter(e, obj) {
             editable: true  // allow in-place editing by user
           },
           new go.Binding("text", "text").makeTwoWay(),
-          new go.Binding("stroke", "color")),
+          new go.Binding("color", "color")),
         $(go.Panel, "Auto",
           { name: "PANEL" },
           $(go.Shape, "RoundedRectangle",  // the rectangular shape around the members
-            { fill: "#D3D3D3", stroke: "black", strokeWidth: 3 }),
+            { fill: "color", stroke: "black", strokeWidth: 3 },
+            new go.Binding("fill", "color")),
           $(go.Placeholder, { padding: 10 })  // represents where the members are
         ),
         $(go.Panel, "Horizontal",  // the header
@@ -355,9 +360,10 @@ function incrementCounter(e, obj) {
         var status = jQuery(this).attr("data-status")
 
         // console.log(status)
+        // console.log(key);
         // This will update the color of the "Delta" Node
         var color = getColor(time ,SLA, status)
-
+        // console.log(color);
         if (!!SLA){
             if (data !== null) myDiagram.model.setDataProperty(data, "color", color);
             if (data !== null) myDiagram.model.setDataProperty(data, "default", SLA);

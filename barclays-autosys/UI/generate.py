@@ -40,7 +40,6 @@ def getColor(current, threshold, status):
 
 # print getColor(10,15)
 
-
 def get_nodes():
     global nodes
     nodes = []
@@ -95,9 +94,15 @@ def get_nodes():
                 node['default'] += float(node2['default'])
                 node['time'] += float(node2['time'])
 
+    for d in nodes:
+        if (d['isGroup'] == "true"):
+            color = getColor(d['time'], d['default'], "incomplete")
+            d['color'] = color
 
 
     return nodes
+
+
 
 def box_info():
     pass
